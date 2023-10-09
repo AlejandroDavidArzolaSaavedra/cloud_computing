@@ -1,0 +1,97 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Resources": {
+        "SSHGateSecurityGroup": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "GroupDescription": "Security group for SSH Gate",
+                "SecurityGroupIngress": [
+                    {
+                        "CidrIp": "0.0.0.0/0",
+                        "FromPort": 22,
+                        "ToPort": 22,
+                        "IpProtocol": "tcp"
+                    }
+                ]
+            }
+        },
+        "WebServerSecurityGroup": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "GroupDescription": "Security group for Web Server",
+                "SecurityGroupIngress": [
+                    {
+                        "SourceSecurityGroupId": { "Fn::GetAtt": ["SSHGateSecurityGroup", "GroupId"] },
+                        "FromPort": 22,
+                        "ToPort": 22,
+                        "IpProtocol": "tcp"
+                    },
+                     {
+                    "CidrIp": "0.0.0.0/0",
+                    "FromPort": 80,
+                    "ToPort": 80,
+                    "IpProtocol": "tcp"
+                    }
+                ]
+            }
+        },
+        "SSHGateInstance": {
+            "Type": "AWS::EC2::Instance",
+            "Properties": {
+                "InstanceType": "t2.micro",
+                "ImageId": "ami-03a6eaae9938c858c",
+                "AvailabilityZone": "us-east-1a",
+                "KeyName": "CLAVE_CN",
+                "SecurityGroupIds": [
+                    { "Fn::GetAtt": ["SSHGateSecurityGroup", "GroupId"] }
+                ],
+                "UserData": {
+                    "Fn::Base64": {
+                        "Fn::Join": [
+                            "",
+                            [
+                                "#!/bin/bash\n",
+                                "yum update -y\n",
+                                "yum install -y openssh-server\n",
+                                "systemctl start sshd\n",
+                                "systemctl enable sshd\n"
+                            ]
+                        ]
+                    }
+                }
+            }
+        },
+        "WebServerInstance": {
+            "Type": "AWS::EC2::Instance",
+            "Properties": {
+                "InstanceType": "t2.micro",
+                "ImageId": "ami-03a6eaae9938c858c",
+                "AvailabilityZone": "us-east-1a",
+                "KeyName": "CLAVE_CN",
+                "SecurityGroupIds": [
+                    { "Fn::GetAtt": ["WebServerSecurityGroup", "GroupId"] }
+                ],
+                "UserData": {
+                    "Fn::Base64": {
+                        "Fn::Join": [
+                            "",
+                            [
+                                "#!/bin/bash\n",
+                                "yum update -y\n",
+                                "yum install -y httpd\n",
+                                "systemctl start httpd\n",
+                                "systemctl enable httpd\n",
+                                "yum install -y firewalld\n",
+                                "systemctl start firewalld\n",
+                                "systemctl enable firewalld\n",
+                                "firewall-cmd --zone=public --add-service=http --permanent\n",
+                                "firewall-cmd --reload\n",
+                                "echo \"<html><body><h1>Soy Alejandro y me gusta cantar &#127925</h1></body></html>\" > /var/www/html/index.html\n"
+                            ]
+                        ]
+                    }
+                }
+            }
+        }
+    }
+}
