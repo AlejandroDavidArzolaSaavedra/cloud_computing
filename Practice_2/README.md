@@ -1,4 +1,4 @@
-# AWS Cloud Computing - Practice 2
+# AWS Cloud Computing - Practice 2 README
 
 ## 📋 Table of Contents
 - [📖 Introduction](#introduction)
